@@ -93,10 +93,30 @@ textarea {
    Author's custom styles
    ========================================================================== */
 
+
+
 canvas { 
     display:block; 
     background: #efefef;
+    position: absolute;
+    top: 0px;
+    left: 0px;
 } /* To remove the scrollbars */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

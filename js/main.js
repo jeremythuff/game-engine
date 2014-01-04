@@ -71,18 +71,44 @@ $(document).ready(function() {
 
         for(n=0;n<numRows;n++){
 
-            for(i=0;i<numRows;i++){
+            for(i=0;i<numCols;i++){
                 
-                cube(cursorX, cursorY);
+                
                 var iso = isoCoord(cursorX, cursorY);
-                var thisRegion = {
-                    "coord": locX+"-"+locY,
-                    "x": iso.x,
-                    "y": iso.y,
-                    "xw": iso.xw,
-                    "yh": iso.yh
+                var thisGridCoord = locX+"-"+locY;
+                region[thisGridCoord] = {
+                        "coord": thisGridCoord,
+                        "cartCoord": {
+                            "x": cursorX,
+                            "y": cursorY,
+                            "xw": cursorX+w,
+                            "yh": cursorY+h
+                        },
+                        "isoCoord": {
+                            "x": iso.x,
+                            "y": iso.y,
+                            "xw": iso.xw,
+                            "yh": iso.yh
+                        },
+                        "covered": {
+                            "top": false,
+                            "down": false,
+                            "right": false,
+                        }
+                    }
+                //cover bottom
+                
+                //cover up
+                var upBlock = locX + "-" + (locY-1)
+                if(upBlock in region) {
+                    region[upBlock]['covered']['down'] = true;
                 }
-                region.push(thisRegion);
+                //cover left
+                var rightBlock = (locX-1) + "-" + locY
+                if(rightBlock in region) {
+                    region[rightBlock]['covered']['right'] = true;
+                }
+                cube(region[thisGridCoord]);
                 //x+1
                 cursorX += w;
                 cursorY += h/2;
@@ -118,25 +144,19 @@ $(document).ready(function() {
     //EVENT LISTENERS//
     ///////////////////
 
-    canvas1.addEventListener('click', function(evt) {
+    canvas1.addEventListener('mousemove', function(evt) {
         var mousePos = getMousePos(canvas1, evt);
-        var message = 'Mouse position: ' + mousePos.x + ',' + mousePos.y;
-        writeMessage(canvas1, message);
-
-        $(region).each(function() {
-           
+        var regionKeys = Object.keys(region);
+        
+        $(regionKeys).each(function() {
             var iso = isoCoord(mousePos.x, mousePos.y);
-            //(iso.x>this.x)&&(iso.x<this.xw)&&
-            if((iso.x>this.x)&&(iso.x<this.xw)&&(iso.y>this.y)&&(iso.y<this.yh)) 
-            {
-                console.log(this.coord);
-            }       
-            
-
-            // console.log((iso.x +" > "+ this.x) +  " " + (iso.x>this.x));
-            // console.log((iso.x +" < "+ this.xw) +  " " + (iso.x<this.xw));
-            // console.log((iso.y +" < "+ this.y) +  " " + (iso.y<this.y));
-            // console.log((iso.y +" < "+ this.yh) + " " + (iso.y>this.yh));
+            if((iso.x>region[this]['isoCoord']['x'])&&(iso.x<region[this]['isoCoord']['xw'])&&(iso.y<region[this]['isoCoord']['y'])&&(iso.y>region[this]['isoCoord']['yh'])) 
+            {               
+                cube(region[this], true);
+                var message = "coord: " + region[this].coord + " @ " + region[this]['cartCoord']['x'] + " " + region[this]['cartCoord']['y'];
+                writeMessage(canvas2, message); 
+            }
+             
         });
 
       }, false);
@@ -234,29 +254,34 @@ $(document).ready(function() {
     
     }
 
-    function makeIso() {
-        ctx1.translate(canvas1.width/2, (canvas1.height/2));
-        ctx1.scale(1, 0.5);
-        ctx1.rotate(45*Math.PI/180);
-        ctx1.translate(-(canvas1.width/2), -(canvas1.height/2));
-    }
+    // function makeIso() {
+    //     ctx1.translate(canvas1.width/2, (canvas1.height/2));
+    //     ctx1.scale(1, 0.5);
+    //     ctx1.rotate(45*Math.PI/180);
+    //     ctx1.translate(-(canvas1.width/2), -(canvas1.height/2));
+    // }
 
-    function unmakeIso() {
-        ctx1.translate(canvas1.width, canvas1.height);
-        ctx1.scale(1.5, 1.5);
-        ctx1.rotate(45*Math.PI/4);
-        ctx1.translate(-(canvas1.width/2), -(canvas1.height/2));
-    }
+    // function unmakeIso() {
+    //     ctx1.translate(canvas1.width, canvas1.height);
+    //     ctx1.scale(1.5, 1.5);
+    //     ctx1.rotate(45*Math.PI/4);
+    //     ctx1.translate(-(canvas1.width/2), -(canvas1.height/2));
+    // }
 
-    function cube(x,y){
+    function cube(region, stroke) {
+    
+    var x = region['cartCoord']['x'];
+    var y = region['cartCoord']['y'];
     var faces = [
         [1,-0.5,1,0.5,x,y, "white"],
         [1,-0.5,0,1,x+w,y+(h/2), "afafaf"],
         [1,0.5,0,-1,x,y+h, "grey"]
     ];
    
-    $(faces).each(function() {
-        var matrix = this;
+    
+
+    if(!region['covered']['top']) {
+        var matrix = faces[0];
         ctx1.save();
         ctx1.setTransform(
             matrix[0],
@@ -267,12 +292,53 @@ $(document).ready(function() {
             matrix[5]
         );
         
-        //ctx1.strokeRect(0, 0, w, h);
+        if(stroke===true) {
+             ctx1.strokeRect(0, 0, w, h)
+        }
         ctx1.fillStyle = matrix[6];
         ctx1.fillRect(0, 0, w, h);
         ctx1.restore();
+    }
 
-    });
+    if(!region['covered']['down']) {
+        var matrix = faces[1];
+        ctx1.save();
+        ctx1.setTransform(
+            matrix[0],
+            matrix[1],
+            matrix[2],
+            matrix[3],
+            matrix[4],
+            matrix[5]
+        );
+        
+        if(stroke===true) {
+             ctx1.strokeRect(0, 0, w, h)
+        }
+        ctx1.fillStyle = matrix[6];
+        ctx1.fillRect(0, 0, w, h);
+        ctx1.restore();
+    }
+
+    if(!region['covered']['right']) {
+        var matrix = faces[2];
+        ctx1.save();
+        ctx1.setTransform(
+            matrix[0],
+            matrix[1],
+            matrix[2],
+            matrix[3],
+            matrix[4],
+            matrix[5]
+        );
+        
+        if(stroke===true) {
+             ctx1.strokeRect(0, 0, w, h)
+        }
+        ctx1.fillStyle = matrix[6];
+        ctx1.fillRect(0, 0, w, h);
+        ctx1.restore();
+    }
      
 }
 
@@ -312,16 +378,15 @@ function isoY(x,y) {
 
 function isoCoord(x,y) {
     // First, adjust for the offset:
-    var adjScreenX = x - 0;
-    var adjScreenY = y - 0;
-    var adjScreenXW = (x - 0)+w;
-    var adjScreenYH = (y - 0)+h;
-     
+    var adjScreenX = x;
+    var adjScreenY = y;
+    var adjScreenXW = adjScreenX+w;
+    var adjScreenYH = adjScreenY-(h/2);
     // Now, retrieve the grid space:
-    isoX = ((adjScreenY / (h/2)) + (adjScreenX / (w/2))) / 2;
-    isoY = ((adjScreenY / (h/2)) - (adjScreenX / (w/2))) / 2;
-    isoXW = ((adjScreenYH / (h/2)) + (adjScreenXW / (w/2))) / 2;
-    isoYH = ((adjScreenYH / (h/2)) + (adjScreenXW / (w/2))) / 2;
+    isoX = ((adjScreenY / (h/2)) + (adjScreenX / w)) / 2;
+    isoY = ((adjScreenY / (h/2)) - (adjScreenX / w)) / 2;
+    isoXW = isoX+1;
+    isoYH = isoY-1;
     var iso = {};
     iso["x"] = isoX;
     iso["y"] = isoY;

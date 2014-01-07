@@ -88,7 +88,8 @@ $(document).ready(function() {
                             "x": iso.x,
                             "y": iso.y,
                             "xw": iso.xw,
-                            "yh": iso.yh
+                            "yh": iso.yh,
+                            "z": 0
                         },
                         "covered": {
                             "top": false,
@@ -102,13 +103,13 @@ $(document).ready(function() {
                 var upBlock = locX + "-" + (locY-1)
                 if(upBlock in region) {
                     region[upBlock]['covered']['down'] = true;
-                }
+                } 
                 //cover left
-                var rightBlock = (locX-1) + "-" + locY
-                if(rightBlock in region) {
-                    region[rightBlock]['covered']['right'] = true;
-                }
-                cube(region[thisGridCoord]);
+                var leftBlock = (locX-1) + "-" + locY
+                if(leftBlock in region) {
+                    region[leftBlock]['covered']['right'] = true;
+                } 
+                cube(region[thisGridCoord], region[thisGridCoord]["isoCoord"]["z"]);
                 //x+1
                 cursorX += w;
                 cursorY += h/2;
@@ -152,9 +153,27 @@ $(document).ready(function() {
             var iso = isoCoord(mousePos.x, mousePos.y);
             if((iso.x>region[this]['isoCoord']['x'])&&(iso.x<region[this]['isoCoord']['xw'])&&(iso.y<region[this]['isoCoord']['y'])&&(iso.y>region[this]['isoCoord']['yh'])) 
             {               
-                cube(region[this], true);
+                reDrawCanvas();
+                cube(region[this], region[this]["isoCoord"]["z"], true);
                 var message = "coord: " + region[this].coord + " @ " + region[this]['cartCoord']['x'] + " " + region[this]['cartCoord']['y'];
                 writeMessage(canvas2, message); 
+            }
+             
+        });
+
+      }, false);
+
+    canvas1.addEventListener('mousemove', function(evt) {
+        var mousePos = getMousePos(canvas1, evt);
+        var regionKeys = Object.keys(region);
+        
+        
+        $(regionKeys).each(function() {
+            var iso = isoCoord(mousePos.x, mousePos.y);
+            if((iso.x>region[this]['isoCoord']['x'])&&(iso.x<region[this]['isoCoord']['xw'])&&(iso.y<region[this]['isoCoord']['y'])&&(iso.y>region[this]['isoCoord']['yh'])) 
+            {               
+                reDrawCanvas();
+                cube(region[this], region[this]["isoCoord"]["z"]+1); 
             }
              
         });
@@ -268,14 +287,16 @@ $(document).ready(function() {
     //     ctx1.translate(-(canvas1.width/2), -(canvas1.height/2));
     // }
 
-    function cube(region, stroke) {
+    function cube(region, z, stroke) {
     
     var x = region['cartCoord']['x'];
     var y = region['cartCoord']['y'];
+    var z = z*(h*1.5);
+
     var faces = [
-        [1,-0.5,1,0.5,x,y, "white"],
-        [1,-0.5,0,1,x+w,y+(h/2), "afafaf"],
-        [1,0.5,0,-1,x,y+h, "grey"]
+        [1,-0.5,1,0.5,x+z,y-z, "white"],
+        [1,0.5,0,-1,x+z,y+h-z, "grey"],
+        [1,-0.5,0,1,x+w+z,y+(h/2)-z, "afafaf"]
     ];
    
     

@@ -163,17 +163,16 @@ $(document).ready(function() {
 
       }, false);
 
-    canvas1.addEventListener('mousemove', function(evt) {
+    canvas1.addEventListener('click', function(evt) {
         var mousePos = getMousePos(canvas1, evt);
         var regionKeys = Object.keys(region);
-        
         
         $(regionKeys).each(function() {
             var iso = isoCoord(mousePos.x, mousePos.y);
             if((iso.x>region[this]['isoCoord']['x'])&&(iso.x<region[this]['isoCoord']['xw'])&&(iso.y<region[this]['isoCoord']['y'])&&(iso.y>region[this]['isoCoord']['yh'])) 
             {               
                 reDrawCanvas();
-                cube(region[this], region[this]["isoCoord"]["z"]+1); 
+                cube(region[this], region[this]["isoCoord"]["z"]+1);
             }
              
         });
@@ -291,7 +290,7 @@ $(document).ready(function() {
     
     var x = region['cartCoord']['x'];
     var y = region['cartCoord']['y'];
-    var z = z*(h*1.5);
+    var z = z*h;
 
     var faces = [
         [1,-0.5,1,0.5,x+z,y-z, "white"],

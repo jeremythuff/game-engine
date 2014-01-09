@@ -84,6 +84,7 @@ Game.prototype = {
 var Map = function () {
     this.name = 'untitled';
     this.size = {};
+    this.cellSize = {};
     this.cubes = [];
     
     return this;
@@ -115,10 +116,21 @@ Map.prototype = {
         if (arg === "rows") size = this.size.rows;
         return size;
     },
+    setCellSize: function(w,h) {
+        this.cellSize.w = w;
+        this.cellSize.h = h;
+    },
+    getCellSize: function(arg) {
+        var cellSize = this.cellSize;
+        if(arg === "w") cellSize = this.cellSize.w;
+        if(arg === "h") cellSize = this.cellSize.h;
+        return cellSize;
+    },
     build: function (name, cols, rows, w, h) {
 
         this.setName(name);
         this.setSize(cols, rows);
+        this.setCellSize(w, h);
 
         var locx = 1;
         var locy = 1;
@@ -147,6 +159,17 @@ Map.prototype = {
             cursorX = cursorXstart;
             cursorY = cursorYstart;
         }
+    },
+    addCube: function(x,y,z) {
+        var cube = new Cube(this);
+        cube.setGridCoord(x,y,z);
+        cube.setCartCoord(x,y);
+        cube.setIsoCoord(x,y);
+        cube.setDimensions(this.cellSize.w, this.cellSize.h);
+        map.cubes.push();
+    },
+    removeCube: function(x,y,z,map) {
+
     }
 };
 
@@ -256,13 +279,7 @@ Cube.prototype = {
     },
     setCartCoord: function (x, y) {
         this.position.cartCoord.x = x;
-        this.faces[0][4] = x;
-        this.faces[1][4] = x;
-        this.faces[2][4] = x+this.dimensions.w;
         this.position.cartCoord.y = y;
-        this.faces[0][5] = y;
-        this.faces[1][5] = y+this.dimensions.h;
-        this.faces[2][5] = (y)+(this.dimensions.h/2);
     },
     setFaces: function (x, y) {
         this.faces[0][4] = x;
@@ -274,10 +291,14 @@ Cube.prototype = {
     }
 };
 
-myGame = new Game('myGame');
+var myGame = new Game('myGame');
 myGame.makeMap('mapOne', 10, 10, 25, 25);
 myGame.init();
 myGame.loadMap('mapOne');
+
+var map = myGame.getCurrentMap();
+//console.log(map);
+map.addCube(11,11,0); 
 
 
 console.log(myGame);

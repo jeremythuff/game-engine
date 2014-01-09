@@ -36,15 +36,48 @@ Game.prototype = {
         }
         return maps
     },
+    loadMap: function(arg) {
+        var map = this.maps[arg];
+        this.setCurrentMap(map);
+        this.drawMap();
+    },
     setCurrentMap: function(arg) {
         this.currentMap = arg;
     },
     getCurrentMap: function() {
         return this.currentMap;
     },
-    loadMap: function(arg) {
-        this.maps[arg].draw(this.ctx);
-        this.setCurrentMap(arg);
+    drawMap: function() {
+        this.canvas.width = this.canvas.width;
+        var ctx = this.ctx;
+        var map = this.getCurrentMap();
+        var cubes = map.getCubes();
+
+         for(i=0;i<cubes.length;i++) {
+            var cube = cubes[i];
+            var x = cube.position.cartCoord.x;
+            var y = cube.position.cartCoord.y;
+            var w = cube.dimensions.w;
+            var h = cube.dimensions.h;
+            var faces = cube.faces;
+            
+            for(n=0;n<faces.length;n++) {
+                ctx.save();
+                var face = faces[n];
+                ctx.setTransform(
+                    face[0],
+                    face[1],
+                    face[2],
+                    face[3],
+                    face[4],
+                    face[5]
+                );
+
+                ctx.fillStyle = face[6];
+                ctx.fillRect(0, 0, w, h);
+                ctx.restore();
+            }
+        }
     }
 }
 
@@ -62,6 +95,9 @@ Map.prototype = {
     },
     getName: function () {
         return this.name;
+    },
+    getCubes: function() {
+        return this.cubes;
     },
     setCols: function (arg) {
         this.size.cols = arg;
@@ -88,15 +124,16 @@ Map.prototype = {
         var locy = 1;
         var cursorXstart = (window.innerWidth/2)-(w/2);
         var cursorYstart = (h/2);
-        cursorX = cursorXstart;
-        cursorY = cursorYstart;
+        var cursorX = cursorXstart;
+        var cursorY = cursorYstart;
 
-        for (i = 0; i < this.getSize('cols'); i++) {
-            for (n = 0; n < this.getSize('rows'); n++) {
+        for (i = 0; i < this.getSize('rows'); i++) {
+            for (n = 0; n < this.getSize('cols'); n++) {
                 var cube = new Cube(this);
                 cube.setDimensions(w,h);
                 cube.setGridCoord(locx, locy, 1);
                 cube.setCartCoord(cursorX, cursorY);
+                cube.setFaces(cursorX, cursorY);
                 cube.setIsoCoord(cursorX, cursorY);
 
                 locx++;
@@ -110,36 +147,7 @@ Map.prototype = {
             cursorX = cursorXstart;
             cursorY = cursorYstart;
         }
-    },
-    draw: function(ctx) {
-         // for(i=0;i<this.cubes.length;i++) {
-         //    var x = this.cubes[i].position.isoCoord.x;
-         //    var y = this.cubes[i].position.isoCoord.y;
-         //    var w = this.cubes[i].dimensions.w;
-         //    var h = this.cubes[i].dimensions.h;
-         //    var matrix = [
-         //        [1,-0.5,1,0.5,x,y, "white"],
-         //        [1,0.5,0,-1,x,y+h, "grey"],
-         //        [1,-0.5,0,1,x+w,y+(h/2), "#afafaf"]
-         //    ];
-         //    for(n=0;n<matrix.length;i++) {
-         //        ctx.save();
-         //        ctx.setTransform(
-         //            matrix[0],
-         //            matrix[1],
-         //            matrix[2],
-         //            matrix[3],
-         //            matrix[4],
-         //            matrix[5]
-         //        );
-                
-         //        ctx.fillStyle = matrix[6];
-         //        ctx.fillRect(0, 0, w, h);
-         //        ctx.restore();
-         //    }
-         // }
     }
-
 };
 
 var Cube = function (map) {
@@ -151,6 +159,11 @@ var Cube = function (map) {
     };
     this.dimensions = {};
     this.texture = {};
+    this.faces = [
+        [1,-0.5,1,0.5,0,0, "white"],
+        [1,0.5,0,-1,0,0, "grey"],
+        [1,-0.5,0,1,0,0, "afafaf"]
+    ];
  
     map.cubes.push(this);
 
@@ -182,18 +195,16 @@ Cube.prototype = {
     },
     setIsoCoord: function (x, y) {
 
-        // First, adjust for the offset:
         var adjScreenX = x;
         var adjScreenY = y;
         var w = this.dimensions.w;
         var h = this.dimensions.h;
         var adjScreenXW = adjScreenX+w;
         var adjScreenYH = adjScreenY-(h/2);
-        // Now, retrieve the grid space:
-        isoX = ((adjScreenY / (h/2)) + (adjScreenX / w)) / 2;
-        isoY = ((adjScreenY / (h/2)) - (adjScreenX / w)) / 2;
-        isoXW = isoX+1;
-        isoYH = isoY-1;
+        var isoX = ((adjScreenY / (h/2)) + (adjScreenX / w)) / 2;
+        var isoY = ((adjScreenY / (h/2)) - (adjScreenX / w)) / 2;
+        var isoXW = isoX+1;
+        var isoYH = isoY-1;
 
         this.position.isoCoord.x = isoX;
         this.position.isoCoord.y = isoY;
@@ -245,13 +256,28 @@ Cube.prototype = {
     },
     setCartCoord: function (x, y) {
         this.position.cartCoord.x = x;
+        this.faces[0][4] = x;
+        this.faces[1][4] = x;
+        this.faces[2][4] = x+this.dimensions.w;
         this.position.cartCoord.y = y;
+        this.faces[0][5] = y;
+        this.faces[1][5] = y+this.dimensions.h;
+        this.faces[2][5] = (y)+(this.dimensions.h/2);
+    },
+    setFaces: function (x, y) {
+        this.faces[0][4] = x;
+        this.faces[1][4] = x;
+        this.faces[2][4] = x+this.dimensions.w;
+        this.faces[0][5] = y;
+        this.faces[1][5] = y+this.dimensions.h;
+        this.faces[2][5] = (y)+(this.dimensions.h/2);
     }
 };
 
 myGame = new Game('myGame');
-myGame.makeMap('map1', 10, 10, 25, 25);
+myGame.makeMap('mapOne', 10, 10, 25, 25);
 myGame.init();
-myGame.loadMap('map1');
+myGame.loadMap('mapOne');
+
 
 console.log(myGame);

@@ -22,25 +22,24 @@ Game.prototype = {
         this.currentScene = this.scenes[name];
     },
     loadMap: function(name) {
-        var jqxhr = $.getJSON( "maps/"+name+".json", function() {
-          console.log( "success" );
-        })
-        .done(function() {
-            console.log( "second success" );
-        })
-        .fail(function() {
-            console.log( "error" );
-        })
-        .always(function() {
-            console.log( "complete" );
-        });
-         
-        // Perform other work here ...
-         
-        // Set another completion function for the request above
-        jqxhr.complete(function(data) {
-          console.log( data.responseText);
-        });
+        
+        request = new XMLHttpRequest;
+        request.open('GET', "maps/"+name+".json", true);
+
+        request.onload = function() {
+          if (request.status >= 200 && request.status < 400){
+            var data = JSON.parse(request.responseText);
+            console.log(data);
+          } else {
+            console.log("We reached our target server, but it returned an error");
+          }
+        };
+
+        request.onerror = function() {
+          console.log("There was a connection error of some sort");
+        };
+
+        request.send();
     }
 }
 
